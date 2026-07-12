@@ -70,35 +70,33 @@ def read_sensor_bin(path: str,
         start_idx = _binary_search_ts(f, n_records, t_start or 0)
         # Read from start_idx to end (or until t_end)
         f.seek(start_idx * RECORD_SIZE)
-        rows = []
-        for i in range(start_idx, n_records):
-            record = f.read(RECORD_SIZE)
-            if len(record) < RECORD_SIZE:
-                break
-            ts = struct.unpack(">q", record[:8])[0]
-            if t_end is not None and ts > t_end:
-                break
-            if t_start is not None and ts < t_start:
-                continue
-            x, y, z = struct.unpack("<fff", record[8:20])
-            rows.append((ts, x, y, z))
-
-    if not rows:
-        return pd.DataFrame(columns=["timestamp", "X", "Y", "Z"])
-    return pd.DataFrame(rows, columns=["timestamp", "X", "Y", "Z"])
+        # Read a chunk, then filter by timestamp
+        remaining = (n_records - start_idx) * RECORD_SIZE
+        chunk_size = min(remaining, 10_000_000)  # 10MB chunks
+        data = f.read(chunk_size)
+        df = _parse_binary_block(data)
+        # Filter by time range
+        if t_start is not None:
+            df = df[df["timestamp"] >= t_start]
+        if t_end is not None:
+            df = df[df["timestamp"] <= t_end]
+        return df.reset_index(drop=True)
 
 
 def _parse_binary_block(data: bytes) -> pd.DataFrame:
-    """Parse raw bytes into DataFrame."""
+    """Parse raw bytes into DataFrame using numpy (fast)."""
     n = len(data) // RECORD_SIZE
-    ts  = np.zeros(n, dtype=np.int64)
-    xyz = np.zeros((n, 3), dtype=np.float32)
-    for i in range(n):
-        off = i * RECORD_SIZE
-        ts[i]  = struct.unpack(">q", data[off:off+8])[0]
-        xyz[i] = struct.unpack("<fff", data[off+8:off+20])
-    return pd.DataFrame({"timestamp": ts, "X": xyz[:,0],
-                         "Y": xyz[:,1], "Z": xyz[:,2]})
+    if n == 0:
+        return pd.DataFrame(columns=["timestamp", "X", "Y", "Z"])
+    arr = np.frombuffer(data, dtype=np.uint8).reshape(n, 20)
+    # Timestamp: bytes 0-7, big-endian int64
+    ts = np.zeros(n, dtype=np.int64)
+    for i in range(8):
+        ts = ts | (arr[:, i].astype(np.int64) << (56 - 8 * i))
+    # XYZ: bytes 8-19, little-endian float32
+    xyz = arr[:, 8:20].view(np.float32).reshape(n, 3)
+    return pd.DataFrame({"timestamp": ts, "X": xyz[:, 0],
+                         "Y": xyz[:, 1], "Z": xyz[:, 2]})
 
 
 def _binary_search_ts(f, n_records: int, target_ts: int) -> int:

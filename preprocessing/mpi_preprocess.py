@@ -63,9 +63,12 @@ def extract_positives(session_dir: str, screen_df: pd.DataFrame) -> list:
 
 
 def extract_negatives(session_dir: str, screen_df: pd.DataFrame) -> list:
-    """Paper 4.3.1: SCREEN_OFF to next SCREEN_ON/USER_PRESENT, exclude last 3s."""
+    """Paper 4.3.1: SCREEN_OFF to next SCREEN_ON/USER_PRESENT, exclude last 3s.
+    MEMORY FIX: only read last 60s of each interval (not hours of idle data)."""
     samples = []
     window_ms = int(cfg.mpi_window_sec * 1000)
+    max_read_sec = 60  # cap: don't read hours of idle phone data
+    max_read_ms = max_read_sec * 1000
     off_events = screen_df[screen_df["event"] == FLAG_SCREEN_OFF]
 
     for _, row in off_events.iterrows():
@@ -76,12 +79,15 @@ def extract_negatives(session_dir: str, screen_df: pd.DataFrame) -> list:
         if later.empty:
             continue
         end_ts = int(later.iloc[0]["timestamp"])
-        # Exclude last 3 seconds
         effective_end = end_ts - window_ms
         if effective_end <= off_ts:
             continue
+        # MEMORY FIX: only read last 60s, not entire gap
+        read_start = max(off_ts, effective_end - max_read_ms)
+        if effective_end - read_start < window_ms:
+            continue
 
-        merged = read_sensors_window(session_dir, off_ts, effective_end)
+        merged = read_sensors_window(session_dir, read_start, effective_end)
         if merged is None or len(merged) < cfg.mpi_min_readings:
             continue
         # Check not stationary
