@@ -28,12 +28,12 @@ RECORD_SIZE       = 20
 
 # Sensor file names inside each session folder
 SENSOR_FILES = {
-    "acc":  "accel.bin",
-    "grav": "gravity.bin",
-    "gyro": "gyro.bin",
-    "lin":  "linAccel.bin",
-    "mag":  "MagneticField.bin",
-    "rot":  "Rotation.bin",
+    "acc":  "accel.txt",
+    "grav": "gravity.txt",
+    "gyro": "gyro.txt",
+    "lin":  "linAccel.txt",
+    "mag":  "MagneticField.txt",
+    "rot":  "Rotation.txt",
 }
 SCREEN_FILE = "screen.txt"
 

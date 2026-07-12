@@ -28,9 +28,9 @@ from utils.bin_reader import (load_session, FLAG_USER_PRESENT,
                                ALL_SENSOR_COLS)
 
 MPI_INPUT_DIRS = [
-    "/kaggle/input/motionid-imu-all-motions-part1/IMU_all_motions_part1",
-    "/kaggle/input/motionid-imu-all-motions-part2/IMU_all_motions_part2",
-    "/kaggle/input/motionid-imu-all-motions-part3/IMU_all_motions_part3",
+    "/kaggle/input/datasets/djaarf/motionid-imu-all-motions-part1/IMU_all_motions_part1",
+    "/kaggle/input/datasets/djaarf/motionid-imu-all-motions-part2/IMU_all_motions_part2",
+    "/kaggle/input/datasets/djaarf/motionid-imu-all-motions-part3/IMU_all_motions_part3",
 ]
 PROCESSED_DIR = "data/mpi/processed"
 LIN_COLS      = ["lin_X", "lin_Y", "lin_Z"]

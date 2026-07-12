@@ -23,7 +23,7 @@ from configs.config import cfg
 from utils.bin_reader import load_session, FLAG_USER_PRESENT
 from preprocessing.feature_inventory import FEATURE_LIST
 
-UV_INPUT_DIR  = ("/kaggle/input/motionid-imu-specific-motion"
+UV_INPUT_DIR  = ("/kaggle/input/datasets/djaarf/motionid-imu-specific-motion"
                  "/IMU_specific_motion/train_val_test")
 PROCESSED_DIR = "data/uv/processed"
 
