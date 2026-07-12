@@ -1,0 +1,11 @@
+data/mpi/raw/
+data/mpi/processed/
+data/uv/raw/
+data/uv/processed/
+data/dummy/
+models/checkpoints/
+__pycache__/
+*.pyc
+*.npz
+*.npy
+.ipynb_checkpoints/
