@@ -1,0 +1,2 @@
+n_baseline,acc_val_mean,acc_val_std,acc_test_mean,acc_test_std,far_val_mean,far_val_std,far_test_mean,far_test_std
+75,94.42993907745866,0,94.83634311512415,0,0.02,0,0.01818181818181818,0
