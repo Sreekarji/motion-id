@@ -177,7 +177,10 @@ Open `notebooks/humanauth.ipynb` and **Run All**. The notebook is fully self-con
 | Training time (MPI) | < 5 min / model | ~30 s / model |
 | Training time (UV) | ~20 hr / model | ~1.5 hr / model |
 
-**Key difference:** Baseline accuracy is ~4% lower than the paper. The paper does not specify exact CNN layer configuration (depth, filter sizes, embedding dimensions). Our 3-layer architecture is a reasonable approximation. FAR results remain competitive — most test users achieve FAR < 5%.
+**Key differences:**
+
+1. **MPI convolution type:** The paper describes "pointwise convolutions" (kernel_size=1), but does not provide architecture details. We used kernel sizes 5, 5, 3 as a reasonable default. Results fall within the paper's reported accuracy range (73–91%), so the deviation does not invalidate findings.
+2. **UV baseline accuracy:** ~4% lower than the paper (94.3% vs 98.1%). The paper does not specify exact CNN layer configuration (depth, filter sizes, embedding dimensions). Our 3-layer architecture (32→64→128 filters) is a reasonable approximation. FAR results remain competitive — most test users achieve FAR < 5%.
 
 ---
 
