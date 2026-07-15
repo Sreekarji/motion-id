@@ -1,0 +1,94 @@
+{
+  "active_n": 75,
+  "baseline_checkpoints": {
+    "n27": [
+      "D:\\motionid\\checkpoints\\baseline_n27_seed0.pt",
+      "D:\\motionid\\checkpoints\\baseline_n27_seed1.pt",
+      "D:\\motionid\\checkpoints\\baseline_n27_seed2.pt",
+      "D:\\motionid\\checkpoints\\baseline_n27_seed3.pt",
+      "D:\\motionid\\checkpoints\\baseline_n27_seed4.pt"
+    ],
+    "n75": [
+      "D:\\motionid\\checkpoints\\baseline_n75_seed0.pt",
+      "D:\\motionid\\checkpoints\\baseline_n75_seed1.pt",
+      "D:\\motionid\\checkpoints\\baseline_n75_seed2.pt",
+      "D:\\motionid\\checkpoints\\baseline_n75_seed3.pt",
+      "D:\\motionid\\checkpoints\\baseline_n75_seed4.pt"
+    ]
+  },
+  "finetuned_checkpoints": {
+    "n27": {
+      "76": "D:\\motionid\\checkpoints\\ft_user76_n27.pt",
+      "77": "D:\\motionid\\checkpoints\\ft_user77_n27.pt",
+      "79": "D:\\motionid\\checkpoints\\ft_user79_n27.pt",
+      "81": "D:\\motionid\\checkpoints\\ft_user81_n27.pt",
+      "85": "D:\\motionid\\checkpoints\\ft_user85_n27.pt",
+      "86": "D:\\motionid\\checkpoints\\ft_user86_n27.pt",
+      "87": "D:\\motionid\\checkpoints\\ft_user87_n27.pt"
+    },
+    "n75": {
+      "91": "D:\\motionid\\checkpoints\\ft_user91_n75.pt",
+      "92": "D:\\motionid\\checkpoints\\ft_user92_n75.pt",
+      "93": "D:\\motionid\\checkpoints\\ft_user93_n75.pt",
+      "94": "D:\\motionid\\checkpoints\\ft_user94_n75.pt",
+      "95": "D:\\motionid\\checkpoints\\ft_user95_n75.pt",
+      "96": "D:\\motionid\\checkpoints\\ft_user96_n75.pt",
+      "97": "D:\\motionid\\checkpoints\\ft_user97_n75.pt",
+      "98": "D:\\motionid\\checkpoints\\ft_user98_n75.pt",
+      "99": "D:\\motionid\\checkpoints\\ft_user99_n75.pt",
+      "100": "D:\\motionid\\checkpoints\\ft_user100_n75.pt",
+      "101": "D:\\motionid\\checkpoints\\ft_user101_n75.pt"
+    }
+  },
+  "mpi_checkpoints": [
+    "D:\\motionid\\checkpoints\\mpi_1_s10e_#00.pt",
+    "D:\\motionid\\checkpoints\\mpi_1_s10e_#01.pt",
+    "D:\\motionid\\checkpoints\\mpi_1_s10e_#02.pt",
+    "D:\\motionid\\checkpoints\\mpi_1_s10e_#03.pt",
+    "D:\\motionid\\checkpoints\\mpi_1_s10e_#05.pt",
+    "D:\\motionid\\checkpoints\\mpi_2_s10e_#00.pt",
+    "D:\\motionid\\checkpoints\\mpi_2_s10e_#02.pt",
+    "D:\\motionid\\checkpoints\\mpi_2_s10e_#03.pt",
+    "D:\\motionid\\checkpoints\\mpi_2_s10e_#04.pt",
+    "D:\\motionid\\checkpoints\\mpi_2_s10e_#05.pt",
+    "D:\\motionid\\checkpoints\\mpi_3_s10e_#00.pt",
+    "D:\\motionid\\checkpoints\\mpi_3_s10e_#01.pt",
+    "D:\\motionid\\checkpoints\\mpi_3_s10e_#02.pt",
+    "D:\\motionid\\checkpoints\\mpi_3_s10e_#04.pt",
+    "D:\\motionid\\checkpoints\\mpi_4_s10e_#00.pt",
+    "D:\\motionid\\checkpoints\\mpi_4_s10e_#01.pt",
+    "D:\\motionid\\checkpoints\\mpi_4_s10e_#03.pt",
+    "D:\\motionid\\checkpoints\\mpi_4_s10e_#04.pt",
+    "D:\\motionid\\checkpoints\\mpi_4_s10e_#05.pt",
+    "D:\\motionid\\checkpoints\\mpi_5_s10e_#00.pt",
+    "D:\\motionid\\checkpoints\\mpi_5_s10e_#01.pt",
+    "D:\\motionid\\checkpoints\\mpi_5_s10e_#02.pt",
+    "D:\\motionid\\checkpoints\\mpi_5_s10e_#04.pt",
+    "D:\\motionid\\checkpoints\\mpi_5_s10e_#05.pt",
+    "D:\\motionid\\checkpoints\\mpi_6_s10e_#01.pt",
+    "D:\\motionid\\checkpoints\\mpi_6_s10e_#02.pt",
+    "D:\\motionid\\checkpoints\\mpi_6_s10e_#03.pt",
+    "D:\\motionid\\checkpoints\\mpi_6_s10e_#04.pt",
+    "D:\\motionid\\checkpoints\\mpi_6_s10e_#05.pt"
+  ],
+  "mpi_processed_dir": "D:\\motionid\\mpi_processed",
+  "uv_processed_dir": "D:\\motionid\\uv_processed",
+  "uv_processed_pattern": "{uid}.npz",
+  "uv_processed_keys": [
+    "features",
+    "cluster_ids",
+    "user_id"
+  ],
+  "mpi_processed_pattern": "{uid}_{did}.npz",
+  "config": {
+    "active_n": 75,
+    "embed_dim": 5632,
+    "n_branches": 22,
+    "n_channels_per_branch": 4,
+    "n_classes_baseline": 75,
+    "n_classes_finetuned": 2,
+    "uv_window_samples": 50,
+    "mpi_window_samples": 150,
+    "mpi_n_channels": 18
+  }
+}

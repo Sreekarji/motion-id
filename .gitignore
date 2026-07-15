@@ -4,9 +4,13 @@ data/uv/raw/
 data/uv/processed/
 data/dummy/
 models/checkpoints/
+checkpoints/
+mpi_processed/
 __pycache__/
 *.pyc
 *.npz
 *.npy
 .ipynb_checkpoints/
 *.zip
+frontend/node_modules/
+frontend/dist/
