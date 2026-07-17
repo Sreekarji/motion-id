@@ -21,14 +21,12 @@ export default function ScoreDial({ score, threshold }) {
     }
     rafRef.current = requestAnimationFrame(animate)
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
-  }, [displayScore])
+  }, [score, threshold])
 
   const R = 80
   const STROKE = 12
   const CX = 100
   const CY = 95
-  const circumference = Math.PI * R  // semicircle
-
   // Convert normalized value [0,1] to angle [180, 360]
   const toAngle = (v) => 180 + v * 180
   const toXY = (angleDeg) => {

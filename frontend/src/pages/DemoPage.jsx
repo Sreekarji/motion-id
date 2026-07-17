@@ -104,31 +104,34 @@ function UVPhase({ uv, onSkip }) {
 export default function DemoPage({ userId, onComplete }) {
   const [phase, setPhase] = useState(1)  // 1=loading, 2=mpi, 3=uv
   const [result, setResult] = useState(null)
-  const timerRef = useRef(null)
+  const timer1Ref = useRef(null)
+  const timer2Ref = useRef(null)
 
   useEffect(() => {
     runDemo(userId)
       .then(res => {
         setResult(res.data)
         setPhase(2)
-        // After 2s show UV
-        timerRef.current = setTimeout(() => {
+        timer1Ref.current = setTimeout(() => {
           if (res.data.mpi && !res.data.mpi.is_unlock && !(res.data.mpi.note && res.data.mpi.note.includes('bypassed'))) {
             onComplete(res.data)
             return
           }
           setPhase(3)
-          // After 2s go to result
-          timerRef.current = setTimeout(() => onComplete(res.data), 2500)
+          timer2Ref.current = setTimeout(() => onComplete(res.data), 2500)
         }, 2500)
       })
-      .catch(() => onComplete({ final_decision: 'REJECT', mpi: {}, uv: { score: 0, threshold: 0.5 }, user_id: userId, pipeline_short_circuited: false }))
+      .catch(() => onComplete({ final_decision: 'REJECT', mpi: {}, uv: { score: 0, threshold: 0.5 }, user_id: userId, pipeline_short_circuited: false, error: true }))
 
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [userId])
+    return () => {
+      if (timer1Ref.current) clearTimeout(timer1Ref.current)
+      if (timer2Ref.current) clearTimeout(timer2Ref.current)
+    }
+  }, [userId, onComplete])
 
   const handleSkip = () => {
-    if (timerRef.current) clearTimeout(timerRef.current)
+    if (timer1Ref.current) clearTimeout(timer1Ref.current)
+    if (timer2Ref.current) clearTimeout(timer2Ref.current)
     if (result) onComplete(result)
   }
 

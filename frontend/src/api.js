@@ -1,7 +1,11 @@
 import axios from 'axios'
 
-const BASE = "http://localhost:8000"
+// Empty BASE = same-origin. FastAPI serves both the API and this frontend at :8000.
+// Works for localhost AND for any ngrok/external URL without any code change.
+const BASE = import.meta.env.VITE_API_URL ?? ""
 
-export const getUsers = () => axios.get(`${BASE}/users`)
-export const runDemo = (userId) => axios.get(`${BASE}/predict/demo/${userId}`)
-export const getUserSample = (userId) => axios.get(`${BASE}/users/${userId}/sample`)
+const api = axios.create({ baseURL: BASE, timeout: 30000 })
+
+export const getUsers = () => api.get(`/users`)
+export const runDemo = (userId) => api.post(`/predict/demo/${userId}`)
+export const getUserSample = (userId) => api.get(`/users/${userId}/sample`)

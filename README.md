@@ -140,6 +140,53 @@ The system authenticizes the smartphone owner by analyzing how they move the pho
 
 ---
 
+## Demo
+
+### Pipeline UI
+
+A React frontend served by the FastAPI backend demonstrates the full authentication flow end-to-end.
+
+![Homepage](screenshots/01_homepage.png)
+*Homepage — two-stage pipeline diagram with user selector*
+
+![Score Dial](screenshots/02_uv_score_dial.png)
+*UV stage — identity score dial animates to cosine similarity score*
+
+![Accept](screenshots/03_accept_result.png)
+*ACCEPT result — User 101: MPI 81.7%, UV score 0.6504 > threshold 0.4541*
+
+![Reject](screenshots/04_reject_result.png)
+*REJECT result — User 91: rejected at MPI stage (confidence 13.8%)*
+
+### Running the Demo
+
+Start backend + open browser (one click):
+
+```
+D:\motionid\start_demo.bat
+```
+
+Or manually:
+
+```
+cd D:\motionid\backend
+py -3.12 -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Open http://localhost:8000 — select a user, click Run Authentication Demo.
+
+### Verification
+
+With the backend running:
+
+```
+py -3.12 D:\motionid\verify.py
+```
+
+Expected output: all 11 users (91–101) tested, GPU confirmed, endpoints responding.
+
+---
+
 ## Quick Start
 
 ### 1. Attach datasets on Kaggle
@@ -189,12 +236,29 @@ Open `notebooks/humanauth.ipynb` and **Run All**. The notebook is fully self-con
 ```
 motion-id/
 ├── notebooks/
-│   └── humanauth.ipynb          # Full self-contained implementation (12 cells)
+│   └── humanauth.ipynb           # Full self-contained implementation (12 cells)
+├── backend/
+│   ├── main.py                   # FastAPI app — REST API + static file serving
+│   └── model_runner.py           # ModelManager — loads MPI + UV models, runs inference
+├── frontend/
+│   └── src/
+│       ├── pages/                # HomePage, DemoPage, ResultPage
+│       └── components/           # SensorChart, ScoreDial
 ├── evaluation/
 │   ├── results_mpi.csv           # MPI per user-device accuracy (29 sessions)
 │   ├── results_baseline.csv      # UV baseline Acc/FAR by split
 │   └── results_uv_final.csv      # UV fine-tuned per-user FAR (11 test users)
-├── .gitignore                    # Excludes processed data (~1.1 GB) and checkpoints (~840 MB)
+├── screenshots/
+│   ├── 01_homepage.png
+│   ├── 02_uv_score_dial.png
+│   ├── 03_accept_result.png
+│   ├── 04_reject_result.png
+│   ├── 05_backend_startup.png
+│   └── 06_verification_output.png
+├── verify.py                     # End-to-end verification script
+├── start_demo.bat                # One-click demo launcher (Windows)
+├── inventory.json                # Checkpoint registry (auto-generated)
+├── .gitignore
 └── README.md
 ```
 

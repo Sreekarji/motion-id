@@ -3,6 +3,7 @@ Motion ID FastAPI Backend
 Serves the biometric authentication pipeline as a REST API.
 """
 from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -10,39 +11,47 @@ from typing import Optional, List
 import numpy as np
 from model_runner import ModelManager, cfg
 import os, json, torch
+from pathlib import Path
+
+_BASE = Path(__file__).parent.parent   # = D:\motionid  (one level above backend/)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # APP SETUP
 # ─────────────────────────────────────────────────────────────────────────────
 
-app = FastAPI(title="Motion ID API", version="1.0")
+manager: Optional[ModelManager] = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global manager
+    manager = ModelManager(
+        checkpoints_dir=str(_BASE / "checkpoints"),
+        uv_processed_dir=str(_BASE / "uv_processed"),
+        mpi_processed_dir=str(_BASE / "mpi_processed"),
+        inventory_path=str(_BASE / "inventory.json")
+    )
+    print(f"Models loaded. Users: {manager.get_available_users()}")
+    yield
+    # shutdown: nothing to clean up for a demo
+
+
+app = FastAPI(title="Motion ID API", version="1.0", lifespan=lifespan)
+
+_ngrok_url = os.environ.get("NGROK_URL", "")   # set in env if using ngrok
+_origins = ["http://localhost:5173", "http://localhost:3000", "http://localhost:8000"]
+if _ngrok_url:
+    _origins.append(_ngrok_url)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "*"],
+    allow_origins=_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STARTUP
-# ─────────────────────────────────────────────────────────────────────────────
-
-manager: Optional[ModelManager] = None
-
-
-@app.on_event("startup")
-async def startup():
-    global manager
-    manager = ModelManager(
-        checkpoints_dir=r"D:\motionid\checkpoints",
-        uv_processed_dir=r"D:\motionid\uv_processed",
-        mpi_processed_dir=r"D:\motionid\mpi_processed",
-        inventory_path=r"D:\motionid\inventory.json"
-    )
-    print(f"Models loaded. Users: {manager.get_available_users()}")
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # PYDANTIC MODELS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -115,7 +124,7 @@ async def predict_mpi(window: SensorWindow3s):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/predict/demo/{user_id}")
+@app.post("/predict/demo/{user_id}")
 async def predict_demo(user_id: int):
     if manager is None:
         raise HTTPException(status_code=503, detail="Models not loaded yet")
@@ -128,6 +137,8 @@ async def predict_demo(user_id: int):
 
         # Get MPI sample and run real MPI inference
         mpi_sample = manager.get_random_mpi_sample()
+        if mpi_sample is None:
+            print(f"  WARNING: no MPI .npz files found in {manager.mpi_processed_dir} — MPI stage bypassed")
         sensor_data_3s = mpi_sample["sensor_data"] if mpi_sample else None
 
         result = manager.predict_full(user_id, features, sensor_data_3s=sensor_data_3s)
@@ -150,6 +161,6 @@ async def predict_demo(user_id: int):
 # SERVE FRONTEND (production)
 # ─────────────────────────────────────────────────────────────────────────────
 
-frontend_build = r"D:\motionid\frontend\dist"
-if os.path.exists(frontend_build):
-    app.mount("/", StaticFiles(directory=frontend_build, html=True), name="static")
+frontend_build = _BASE / "frontend" / "dist"
+if frontend_build.exists():
+    app.mount("/", StaticFiles(directory=str(frontend_build), html=True), name="static")

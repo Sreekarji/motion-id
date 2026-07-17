@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import HomePage from './pages/HomePage'
 import DemoPage from './pages/DemoPage'
 import ResultPage from './pages/ResultPage'
@@ -13,10 +13,10 @@ export default function App() {
     setView('demo')
   }
 
-  const handleComplete = (result) => {
+  const handleComplete = useCallback((result) => {
     setDemoResult(result)
     setView('result')
-  }
+  }, [])
 
   const handleReset = () => {
     setSelectedUser(null)

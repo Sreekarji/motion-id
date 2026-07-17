@@ -68,10 +68,9 @@ class UVBranch(nn.Module):
     def forward(self, x):
         if not isinstance(x, torch.Tensor):
             x = torch.tensor(x, dtype=torch.float32)
-        import torch.nn.functional as F_nn
-        x = F_nn.relu(self.bn1(self.conv1(x)))
-        x = F_nn.relu(self.bn2(self.conv2(x)))
-        x = F_nn.relu(self.bn3(self.conv3(x)))
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn3(self.conv3(x)))
         return self.fc(self.pool(x).flatten(1))
 
 
@@ -245,7 +244,10 @@ def compute_features(sensor_matrix, rot_matrix):
     ], axis=0)
 
 
-def normalize_length(sample, target_len=150):
+def normalize_length(sample, target_len=None):
+    if target_len is None:
+        target_len = cfg.mpi_window_samples if hasattr(cfg, 'mpi_window_samples') \
+                     else int(cfg.mpi_sampling_rate * cfg.mpi_window_sec)
     n, c = sample.shape
     if n == target_len: return sample.T.astype(np.float32)
     if n < target_len:
@@ -265,12 +267,13 @@ def normalize_length(sample, target_len=150):
 def score_verification(model, X_genuine, X_impostor):
     if len(X_genuine) == 0 or len(X_impostor) == 0:
         return np.array([]), np.array([])
+    model_device = next(model.parameters()).device
     model.eval()
     with torch.no_grad():
         ge = model.get_siamese_embed(
-            torch.tensor(X_genuine, dtype=torch.float32).to(device)).cpu().numpy()
+            torch.tensor(X_genuine, dtype=torch.float32).to(model_device)).cpu().numpy()
         ie = model.get_siamese_embed(
-            torch.tensor(X_impostor, dtype=torch.float32).to(device)).cpu().numpy()
+            torch.tensor(X_impostor, dtype=torch.float32).to(model_device)).cpu().numpy()
     tmpl = ge.mean(0, keepdims=True)
     tmpl /= (np.linalg.norm(tmpl) + 1e-8)
     gn = ge / (np.linalg.norm(ge, axis=1, keepdims=True) + 1e-8)
@@ -336,7 +339,10 @@ class ModelManager:
                     continue
                 fname = os.path.basename(ckpt_path)
                 try:
-                    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+                    try:
+                        ckpt = torch.load(ckpt_path, map_location=device, weights_only=True)
+                    except Exception:
+                        ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
                     model = MPIModel(n_channels=self.cfg.mpi_n_channels, n_classes=2).to(device)
                     state = ckpt.get("model_state", ckpt)
                     model.load_state_dict(state)
@@ -354,7 +360,10 @@ class ModelManager:
                 continue
             try:
                 uid = int(uid_str)
-                ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+                try:
+                    ckpt = torch.load(ckpt_path, map_location=device, weights_only=True)
+                except Exception:
+                    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
                 model = UVModel(n_classes=2).to(device)
                 state = ckpt.get("model_state", ckpt)
                 model.load_state_dict(state)
@@ -375,10 +384,13 @@ class ModelManager:
 
     def _find_user_npz(self, user_id: int) -> Optional[str]:
         """Find .npz file for user, handling zero-padded names (091.npz vs 91.npz)."""
+        tried = []
         for fmt in [f"{user_id}.npz", f"{user_id:03d}.npz", f"{user_id:04d}.npz"]:
             p = os.path.join(self.uv_processed_dir, fmt)
+            tried.append(p)
             if os.path.exists(p):
                 return p
+        print(f"  _find_user_npz: no file found for user {user_id}. Tried: {tried}")
         return None
 
     def _load_user_train_features(self, user_id: int):
@@ -388,8 +400,27 @@ class ModelManager:
             return
         data = np.load(npz_path)
         feats = data["features"]
+        rng = np.random.default_rng(seed=user_id)
+        idx = rng.permutation(feats.shape[0])
         n_train = max(1, int(feats.shape[0] * 0.70))
-        self.user_train_features[user_id] = feats[:n_train].astype(np.float32)
+        train_feats = feats[idx[:n_train]].astype(np.float32)
+        val_feats   = feats[idx[n_train:]].astype(np.float32)
+        self.user_train_features[user_id] = train_feats
+
+        # Compute per-user threshold from validation split.
+        # Use half of training as genuine template, val set as query.
+        # This is a demo approximation — real deployment would use held-out other-user data.
+        if user_id in self.uv_finetuned and len(val_feats) >= 2:
+            try:
+                model = self.uv_finetuned[user_id]
+                half = max(1, len(train_feats) // 2)
+                g_scores, q_scores = score_verification(model, train_feats[:half], val_feats)
+                if len(q_scores) > 0:
+                    threshold = float(np.percentile(q_scores, 10))  # bottom 10% cut
+                    self.user_thresholds[user_id] = max(0.0, min(1.0, threshold))
+                    print(f"  Threshold user={user_id}: {self.user_thresholds[user_id]:.4f}")
+            except Exception as e:
+                print(f"  WARNING: threshold computation failed for user {user_id}: {e}")
 
     def get_available_users(self) -> list:
         return sorted(self.uv_finetuned.keys())
@@ -476,8 +507,9 @@ class ModelManager:
                 "raw_score": round(confidence, 4)
             }
         except Exception as e:
-            return {"is_unlock": True, "confidence": 1.0,
-                    "note": f"MPI inference error: {str(e)} — defaulting to pass"}
+            print(f"  ERROR in predict_mpi: {type(e).__name__}: {e}")
+            return {"is_unlock": False, "confidence": 0.0,
+                    "note": f"MPI inference error: {str(e)} — defaulting to reject"}
 
     def predict_uv(self, user_id: int, features: np.ndarray) -> dict:
         if user_id not in self.uv_finetuned:
