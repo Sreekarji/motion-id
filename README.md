@@ -158,6 +158,12 @@ A React frontend served by the FastAPI backend demonstrates the full authenticat
 ![Reject](screenshots/04_reject_result.png)
 *REJECT result — User 91: rejected at MPI stage (confidence 13.8%)*
 
+![Backend](screenshots/05_backend_startup.png)
+*Backend startup — 29 MPI models + 11 UV fine-tuned models loaded on RTX 4050*
+
+![Verification](screenshots/06_verification_output.png)
+*Verification script — all 11 users tested, GPU confirmed, endpoints responding*
+
 ### Running the Demo
 
 Start backend + open browser (one click):
