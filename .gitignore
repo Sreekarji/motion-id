@@ -16,8 +16,8 @@ frontend/.vite/
 inventory.json
 .virtual_documents/
 
-# Extracted-cell scratch files, not source. humanauth.ipynb IS the
-# reproduction and stays tracked -- the README tells readers to run it.
-notebooks/_*.py
-notebooks/motionid_colab.ipynb
-notebooks/motionid_kaggle.ipynb
+# Local scratch. The tracked notebook is humanauth.ipynb at the repo root
+# (moved there in c961026); notebooks/ holds only stale copies and
+# extracted-cell dumps.
+notebooks/
+*_report.html

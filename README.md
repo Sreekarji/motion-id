@@ -210,7 +210,7 @@ Add these four datasets as inputs to the notebook:
 
 ### 3. Run the notebook
 
-Open `notebooks/humanauth.ipynb` and **Run All**. The notebook is fully self-contained — all code is inline, no external scripts. Total runtime: ~2–3 hours (MPI preprocessing 20 min, UV preprocessing 20 min, MPI training 15 min, UV training 1.5 hr).
+Open `humanauth.ipynb` and **Run All**. The notebook is fully self-contained — all code is inline, no external scripts. Total runtime: ~2–3 hours (MPI preprocessing 20 min, UV preprocessing 20 min, MPI training 15 min, UV training 1.5 hr).
 
 ---
 
@@ -241,8 +241,7 @@ Open `notebooks/humanauth.ipynb` and **Run All**. The notebook is fully self-con
 
 ```
 motion-id/
-├── notebooks/
-│   └── humanauth.ipynb           # Full self-contained implementation (12 cells)
+├── humanauth.ipynb               # Full self-contained implementation
 ├── backend/
 │   ├── main.py                   # FastAPI app — REST API + SPA static serving
 │   └── model_runner.py           # ModelManager — loads MPI + UV models, runs inference
@@ -263,6 +262,8 @@ motion-id/
 │   └── 06_verification_output.png
 ├── verify.py                     # End-to-end verification script
 ├── start_demo.bat                # One-click demo launcher (Windows)
+├── MotionID_report.pdf           # Technical report
+├── MotionID_report.md            # Report source (Markdown)
 ├── inventory.json                # Checkpoint registry (auto-generated)
 ├── .gitignore
 └── README.md
