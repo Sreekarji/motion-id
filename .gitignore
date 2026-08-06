@@ -15,3 +15,5 @@ frontend/dist/
 frontend/.vite/
 inventory.json
 .virtual_documents/
+
+notebooks/

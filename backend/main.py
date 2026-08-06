@@ -126,33 +126,75 @@ async def predict_mpi(window: SensorWindow3s):
 
 @app.post("/predict/demo/{user_id}")
 async def predict_demo(user_id: int):
+    """Full verification: one genuine attempt plus one impostor attempt per other user.
+
+    Every attempt is scored against the CLAIMED user's fine-tuned model, so the
+    impostor runs are exactly the attack this system is meant to stop: someone
+    else's motion presented under user_id's identity.
+    """
     if manager is None:
         raise HTTPException(status_code=503, detail="Models not loaded yet")
     if user_id not in manager.get_available_users():
         raise HTTPException(status_code=404, detail=f"User {user_id} not available")
     try:
-        # Get UV sample
+        # ---- genuine attempt: the claimed user's own data ----
         sample = manager.get_random_sample(user_id)
-        features = np.array(sample["features"], dtype=np.float32)
+        genuine_res = manager.predict_full(
+            user_id, np.array(sample["features"], dtype=np.float32))
+        genuine_uv = genuine_res["uv"]
 
-        # Get MPI sample and run real MPI inference
-        mpi_sample = manager.get_random_mpi_sample()
-        if mpi_sample is None:
-            print(f"  WARNING: no MPI .npz files found in {manager.mpi_processed_dir} — MPI stage bypassed")
-        sensor_data_3s = mpi_sample["sensor_data"] if mpi_sample else None
-
-        result = manager.predict_full(user_id, features, sensor_data_3s=sensor_data_3s)
-        result["sample"] = {
-            "features": sample["features"],
+        genuine = {
+            "decision": genuine_uv["decision"],
+            "uv_score": genuine_uv["score"],
+            "threshold": genuine_uv["threshold"],
             "trial_index": sample["trial_index"],
             "n_trials_total": sample["n_trials_total"],
         }
-        # Include MPI source info
-        if mpi_sample:
-            result["mpi"]["source_file"] = mpi_sample["source_file"]
-            result["mpi"]["sample_index"] = mpi_sample["sample_index"]
-            result["mpi"]["true_label"] = mpi_sample["label"]
-        return result
+
+        # ---- impostor attempts: everyone else's data, claimed user's model ----
+        impostors = []
+        for other_id in manager.get_available_users():
+            if other_id == user_id:
+                continue
+            try:
+                imp_sample = manager.get_random_sample(other_id)
+                imp_res = manager.predict_full(
+                    user_id, np.array(imp_sample["features"], dtype=np.float32))
+                imp_uv = imp_res["uv"]
+                impostors.append({
+                    "impostor_user_id": other_id,
+                    "decision": imp_uv["decision"],
+                    "uv_score": imp_uv["score"],
+                    "threshold": imp_uv["threshold"],
+                })
+            except Exception as e:
+                # One unreadable user must not sink the whole run.
+                print(f"  WARNING: impostor {other_id} vs {user_id} failed: {e}")
+
+        total = len(impostors)
+        accepted = sum(1 for i in impostors if i["decision"] == "ACCEPT")
+        rejected = total - accepted
+        far = (accepted / total) if total else 0.0
+
+        if far == 0:
+            far_display = "0.00% · 1/∞"
+        else:
+            far_display = f"{far * 100:.2f}% · 1/{round(1 / far)}"
+
+        return {
+            "claimed_user_id": user_id,
+            "genuine": genuine,
+            "impostors": impostors,
+            "summary": {
+                "total_impostors": total,
+                "correctly_rejected": rejected,
+                "incorrectly_accepted": accepted,
+                "far": round(far, 6),
+                "far_display": far_display,
+            },
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -163,4 +205,25 @@ async def predict_demo(user_id: int):
 
 frontend_build = _BASE / "frontend" / "dist"
 if frontend_build.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_build), html=True), name="static")
+    # SPA fallback: the client router owns /verify, but StaticFiles only knows
+    # about files on disk, so a hard refresh there would 404. Serve index.html
+    # for any unmatched non-API path and let the router resolve it.
+    from fastapi.responses import FileResponse
+
+    _index = frontend_build / "index.html"
+    _assets = frontend_build / "assets"
+    if _assets.exists():
+        app.mount("/assets", StaticFiles(directory=str(_assets)), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str):
+        # Resolve and confirm containment before serving. Without this,
+        # "../../backend/main.py" escapes the build dir, and an absolute
+        # full_path makes pathlib discard frontend_build entirely
+        # (Path("/a/b") / "/etc/passwd" == Path("/etc/passwd")).
+        if full_path:
+            root = frontend_build.resolve()
+            candidate = (root / full_path).resolve()
+            if candidate.is_file() and candidate.is_relative_to(root):
+                return FileResponse(str(candidate))
+        return FileResponse(str(_index))

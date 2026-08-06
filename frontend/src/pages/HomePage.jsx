@@ -1,96 +1,111 @@
 import { useState, useEffect } from 'react'
-import { getUsers } from '../api'
+import { useNavigate } from 'react-router-dom'
+import { getUsers, runVerification } from '../api'
 
-const PIPELINE_STEPS = [
-  { label: 'Pick Up Phone', icon: '📱' },
-  { label: 'MPI: Unlock Pattern?', icon: '🔍' },
-  { label: 'UV: Identity Match?', icon: '🔐' },
-  { label: 'GRANTED / DENIED', icon: '✅' },
-]
-
-export default function HomePage({ onStartDemo }) {
+export default function HomePage() {
+  const navigate = useNavigate()
   const [users, setUsers] = useState([])
   const [selected, setSelected] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [loadingUsers, setLoadingUsers] = useState(true)
+  const [running, setRunning] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
+    let alive = true
     getUsers()
       .then(res => {
-        setUsers(res.data.users)
-        if (res.data.users.length > 0) setSelected(String(res.data.users[0]))
+        if (!alive) return
+        const list = res.data.users ?? []
+        setUsers(list)
+        if (list.length > 0) setSelected(String(list[0]))
       })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+      .catch(err => {
+        if (!alive) return
+        setError(`Could not load users: ${err.message}`)
+      })
+      .finally(() => { if (alive) setLoadingUsers(false) })
+    return () => { alive = false }
   }, [])
 
+  const handleVerify = async () => {
+    setRunning(true)
+    setError('')
+    try {
+      const result = await runVerification(Number(selected))
+      navigate('/verify', { state: { result, ranAt: Date.now() } })
+    } catch (err) {
+      setError(`Verification failed: ${err.message || 'the backend did not respond.'}`)
+      setRunning(false)
+    }
+  }
+
+  const disabled = loadingUsers || running || !selected
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 20px' }}>
-      {/* Header */}
-      <h1 className="mono" style={{ fontSize: 48, letterSpacing: 4, color: '#00D4FF', marginBottom: 8 }}>
-        MOTION ID
-      </h1>
-      <p className="text-muted" style={{ fontSize: 16, marginBottom: 48, textAlign: 'center' }}>
-        IMU-Based Passive Biometric Authentication
-      </p>
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center',
+      justifyContent: 'center', padding: '40px 20px',
+    }}>
+      <div className="card" style={{ width: '100%', maxWidth: 460, padding: 36 }}>
+        <h1 className="mono" style={{
+          fontSize: 24, color: 'var(--accent)', letterSpacing: 1,
+          marginBottom: 8, lineHeight: 1.3,
+        }}>
+          MotionID — Biometric Verification
+        </h1>
+        <p className="text-muted" style={{ fontSize: 14, marginBottom: 32 }}>
+          Select a user to run full pipeline verification
+        </p>
 
-      {/* Pipeline diagram */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 48, flexWrap: 'wrap', justifyContent: 'center' }}>
-        {PIPELINE_STEPS.map((step, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
-            <div className="card-accent" style={{ padding: '16px 20px', textAlign: 'center', minWidth: 140 }}>
-              <div style={{ fontSize: 28, marginBottom: 6 }}>{step.icon}</div>
-              <div className="mono" style={{ fontSize: 12, color: '#00D4FF' }}>{step.label}</div>
-            </div>
-            {i < PIPELINE_STEPS.length - 1 && (
-              <svg width="40" height="20" style={{ flexShrink: 0 }}>
-                <line x1="0" y1="10" x2="30" y2="10" stroke="#00D4FF" strokeWidth="2"
-                  strokeDasharray="6 4" style={{ animation: 'dash 0.5s linear infinite' }} />
-                <polygon points="28,5 36,10 28,15" fill="#00D4FF" />
-              </svg>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* How it works */}
-      <p className="text-muted" style={{ fontSize: 14, marginBottom: 40, textAlign: 'center', maxWidth: 500 }}>
-        Your phone's motion sensors create a unique signature every time you pick it up.
-      </p>
-
-      {/* User selector */}
-      <div style={{ marginBottom: 24, width: '100%', maxWidth: 320 }}>
-        <label className="mono" style={{ fontSize: 12, color: '#6B7E9E', display: 'block', marginBottom: 8 }}>
-          SELECT USER FOR DEMO
+        <label className="mono" style={{
+          fontSize: 11, color: 'var(--muted)', letterSpacing: 1.2,
+          display: 'block', marginBottom: 8, textTransform: 'uppercase',
+        }}>
+          Claimed Identity
         </label>
         <select
+          className="select-clean"
           value={selected}
           onChange={e => setSelected(e.target.value)}
-          disabled={loading || users.length === 0}
+          disabled={loadingUsers || running || users.length === 0}
+          style={{ marginBottom: 24 }}
+        >
+          {loadingUsers
+            ? <option>Loading users…</option>
+            : users.length === 0
+              ? <option>No users available</option>
+              : users.map(u => <option key={u} value={u}>User {u}</option>)}
+        </select>
+
+        <button
+          className="btn-primary mono"
+          disabled={disabled}
+          onClick={handleVerify}
           style={{
-            width: '100%', padding: '12px 16px', background: '#0D1525', color: '#E8EDF5',
-            border: '1px solid #1E2D4A', borderRadius: 8, fontSize: 16,
-            fontFamily: 'JetBrains Mono, monospace', outline: 'none',
+            width: '100%', fontSize: 15, display: 'flex',
+            alignItems: 'center', justifyContent: 'center', gap: 10,
           }}
         >
-          {loading ? <option>Loading users...</option> :
-           users.map(u => <option key={u} value={u}>User {u}</option>)}
-        </select>
+          {running
+            ? <><span className="spinner" />Running verification…</>
+            : `Verify User ${selected || '—'}`}
+        </button>
+
+        {error && (
+          <p className="mono" style={{
+            color: 'var(--red)', fontSize: 12, marginTop: 14,
+            lineHeight: 1.5, wordBreak: 'break-word',
+          }}>
+            {error}
+          </p>
+        )}
+
+        {running && (
+          <p className="text-muted" style={{ fontSize: 11, marginTop: 14, textAlign: 'center' }}>
+            Scoring the genuine attempt plus every impostor — this takes a few seconds.
+          </p>
+        )}
       </div>
-
-      {/* Run button */}
-      <button
-        className="btn-primary mono"
-        disabled={loading || !selected}
-        onClick={() => onStartDemo(Number(selected))}
-        style={{ fontSize: 18, padding: '16px 40px' }}
-      >
-        ▶ Run Authentication Demo
-      </button>
-
-      {/* Footer */}
-      <p className="text-muted" style={{ fontSize: 11, marginTop: 60 }}>
-        Motion ID — Research Demo · arXiv:2302.01751
-      </p>
     </div>
   )
 }

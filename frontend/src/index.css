@@ -56,3 +56,160 @@ body {
 @keyframes dash {
   to { stroke-dashoffset: -20; }
 }
+
+/* ── Full Verification flow ─────────────────────────────────────────── */
+
+:root {
+  --bg:        #0A0E1A;
+  --panel:     #0D1525;
+  --border:    #1E2D4A;
+  --text:      #E8EDF5;
+  --muted:     #6B7E9E;
+  --accent:    #00D4FF;
+  --green:     #00FF88;
+  --red:       #FF4444;
+  --amber:     #FFD700;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(10, 14, 26, 0.25);
+  border-top-color: #0A0E1A;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Cards start hidden so the stagger delay has something to reveal. */
+.fade-up {
+  opacity: 0;
+  animation: fadeUp 0.45s ease forwards;
+}
+
+.select-clean {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  background-color: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: 'JetBrains Mono', monospace;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7E9E' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  transition: border-color 0.2s;
+}
+.select-clean:hover:not(:disabled) { border-color: var(--accent); }
+.select-clean:focus { border-color: var(--accent); }
+.select-clean:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+.badge-ok   { color: var(--green); background: rgba(0, 255, 136, 0.12); border: 1px solid rgba(0, 255, 136, 0.4); }
+.badge-fail { color: var(--red);   background: rgba(255, 68, 68, 0.12);  border: 1px solid rgba(255, 68, 68, 0.4); }
+
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.stat-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+
+.impostor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.impostor-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.impostor-card.is-failure {
+  border-color: var(--red);
+  background: linear-gradient(0deg, rgba(255, 68, 68, 0.07), rgba(255, 68, 68, 0.07)), var(--panel);
+}
+
+.meter {
+  position: relative;
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.meter-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.meter-mark {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 14px;
+  background: var(--amber);
+  border-radius: 1px;
+}
+
+.banner-ok {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--green);
+  background: rgba(0, 255, 136, 0.08);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 16px;
+}
