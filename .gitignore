@@ -16,4 +16,8 @@ frontend/.vite/
 inventory.json
 .virtual_documents/
 
-notebooks/
+# Extracted-cell scratch files, not source. humanauth.ipynb IS the
+# reproduction and stays tracked -- the README tells readers to run it.
+notebooks/_*.py
+notebooks/motionid_colab.ipynb
+notebooks/motionid_kaggle.ipynb
